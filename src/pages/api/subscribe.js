@@ -1,4 +1,3 @@
-// src/pages/api/subscribe.js
 import clientPromise from '../../utils/mongodb';
 import nodemailer from 'nodemailer';
 
@@ -6,7 +5,6 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { email } = req.body;
 
-    // Email transporter configuration
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -15,7 +13,6 @@ export default async function handler(req, res) {
       },
     });
 
-    // Email options
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
@@ -23,28 +20,23 @@ export default async function handler(req, res) {
       text: 'Thank you for subscribing! Hello from Developer Side!',
     };
 
-    console.log('Starting to send email...');
-    transporter.sendMail(mailOptions, async (error, info) => {
-      if (error) {
-        console.error('Error sending email:', error);
-        return res.status(500).json({ message: 'Subscription successful, but failed to send email' });
-      } else {
-        console.log('Email sent:', info.response);
+    try {
+      console.log('Starting to send email...');
+      await transporter.sendMail(mailOptions);
+      console.log('Email sent successfully.');
 
-        try {
-          const client = await clientPromise;
-          const db = client.db('myDatabase');
-          const collection = db.collection('subscribers');
+      const client = await clientPromise;
+      const db = client.db('myDatabase');
+      const collection = db.collection('subscribers');
 
-          await collection.insertOne({ email });
+      await collection.insertOne({ email });
+      console.log('Subscription saved to MongoDB.');
 
-          return res.status(200).json({ message: 'Subscribed and email sent successfully!' });
-        } catch (dbError) {
-          console.error('Error saving to MongoDB:', dbError);
-          return res.status(500).json({ message: 'Failed to save subscription to database.' });
-        }
-      }
-    });
+      return res.status(200).json({ message: 'Subscribed and email sent successfully!' });
+    } catch (error) {
+      console.error('Error:', error.message);
+      return res.status(500).json({ message: 'Subscription failed.', error: error.message });
+    }
   } else {
     res.status(405).json({ message: 'Method not allowed' });
   }
