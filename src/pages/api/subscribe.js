@@ -5,7 +5,6 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { email } = req.body;
 
-    // Define the transporter here
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -14,7 +13,6 @@ export default async function handler(req, res) {
       },
     });
 
-    // Define the mail options here
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
@@ -30,14 +28,18 @@ export default async function handler(req, res) {
       } else {
         console.log('Email sent:', info.response);
 
-        // Save to the database after the email is successfully sent
-        const client = await clientPromise;
-        const db = client.db('myDatabase');
-        const collection = db.collection('subscribers');
+        try {
+          const client = await clientPromise;
+          const db = client.db('myDatabase');
+          const collection = db.collection('subscribers');
 
-        await collection.insertOne({ email });
+          await collection.insertOne({ email });
 
-        return res.status(200).json({ message: 'Subscribed and email sent successfully!' });
+          return res.status(200).json({ message: 'Subscribed and email sent successfully!' });
+        } catch (dbError) {
+          console.error('Error saving to MongoDB:', dbError);
+          return res.status(500).json({ message: 'Failed to save subscription to database.' });
+        }
       }
     });
   } else {
