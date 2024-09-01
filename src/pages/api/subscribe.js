@@ -1,3 +1,4 @@
+// src/pages/api/subscribe.js
 import clientPromise from '../../utils/mongodb';
 import nodemailer from 'nodemailer';
 
@@ -5,6 +6,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { email } = req.body;
 
+    // Email transporter configuration
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -13,6 +15,7 @@ export default async function handler(req, res) {
       },
     });
 
+    // Email options
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
@@ -29,18 +32,17 @@ export default async function handler(req, res) {
         console.log('Email sent:', info.response);
 
         try {
-            const client = await clientPromise;
-            const db = client.db('myDatabase');
-            const collection = db.collection('subscribers');
-          
-            await collection.insertOne({ email });
-          
-            return res.status(200).json({ message: 'Subscribed and email sent successfully!' });
-          } catch (dbError) {
-            console.error('Error saving to MongoDB:', dbError);  // Log detailed error message
-            return res.status(500).json({ message: 'Failed to save subscription to database.', error: dbError.message });
-          }
-          
+          const client = await clientPromise;
+          const db = client.db('myDatabase');
+          const collection = db.collection('subscribers');
+
+          await collection.insertOne({ email });
+
+          return res.status(200).json({ message: 'Subscribed and email sent successfully!' });
+        } catch (dbError) {
+          console.error('Error saving to MongoDB:', dbError);
+          return res.status(500).json({ message: 'Failed to save subscription to database.' });
+        }
       }
     });
   } else {
