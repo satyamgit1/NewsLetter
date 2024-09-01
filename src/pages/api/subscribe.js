@@ -29,17 +29,18 @@ export default async function handler(req, res) {
         console.log('Email sent:', info.response);
 
         try {
-          const client = await clientPromise;
-          const db = client.db('myDatabase');
-          const collection = db.collection('subscribers');
-
-          await collection.insertOne({ email });
-
-          return res.status(200).json({ message: 'Subscribed and email sent successfully!' });
-        } catch (dbError) {
-          console.error('Error saving to MongoDB:', dbError);
-          return res.status(500).json({ message: 'Failed to save subscription to database.' });
-        }
+            const client = await clientPromise;
+            const db = client.db('myDatabase');
+            const collection = db.collection('subscribers');
+          
+            await collection.insertOne({ email });
+          
+            return res.status(200).json({ message: 'Subscribed and email sent successfully!' });
+          } catch (dbError) {
+            console.error('Error saving to MongoDB:', dbError);  // Log detailed error message
+            return res.status(500).json({ message: 'Failed to save subscription to database.', error: dbError.message });
+          }
+          
       }
     });
   } else {
